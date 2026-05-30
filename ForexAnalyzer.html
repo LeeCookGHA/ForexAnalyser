@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forex Strength Analyzer Pro</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: linear-gradient(to bottom right, #0f172a, #1e293b, #0f172a);
+            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            color: #f1f5f9;
+            padding: 1.5rem;
+        }
+        
+        .container {
+            max-width: 80rem;
+            margin: 0 auto;
+        }
+        
+        .header {
+            margin-bottom: 2rem;
+        }
+        
+        .header h1 {
+            font-size: 2.25rem;
+            font-weight: bold;
+            color: white;
+            margin-bottom: 0.5rem;
+        }
+        
+        .header p {
+            color: #cbd5e1;
+        }
+        
+        .control-panel {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 0.5rem;
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        @media (min-width: 768px) {
+            .control-panel {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+            }
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 1rem;
+        }
+        
+        button {
+            padding: 0.75rem 2rem;
+            border-radius: 0.5rem;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        #fetchBtn {
+            background-color: #2563eb;
+            color: white;
+        }
+        
+        #fetchBtn:hover:not(:disabled) {
+            background-color: #1d4ed8;
+        }
+        
+        #clearBtn {
+            background-color: #475569;
+            color: #e2e8f0;
+        }
+        
+        #clearBtn:hover:not(:disabled) {
+            background-color: #334155;
+        }
+        
+        .status-info {
+            text-align: right;
+        }
+        
+        .status-message {
+            font-size: 0.875rem;
+            color: #94a3b8;
+            font-style: italic;
+        }
+        
+        .last-update {
+            font-size: 0.75rem;
+            color: #64748b;
+            margin-top: 0.25rem;
+        }
+        
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        @media (min-width: 1024px) {
+            .main-grid {
+                grid-template-columns: 1fr 2fr;
+            }
+        }
+        
+        .card {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+        }
+        
+        .card h2 {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: white;
+            margin-bottom: 1.5rem;
+        }
+        
+        .currency-meters {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .meter {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .meter-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .meter-currency {
+            color: white;
+            font-weight: 600;
+        }
+        
+        .strength-badge {
+            font-weight: bold;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+        }
+        
+        .strength-5 { background-color: #dc2626; color: white; }
+        .strength-4 { background-color: #ef4444; color: white; }
+        .strength-3 { background-color: #f87171; color: white; }
+        .strength-2 { background-color: #fca5a5; color: #111827; }
+        .strength-1 { background-color: #fecaca; color: #111827; }
+        .strength-0 { background-color: #e5e7eb; color: #111827; }
+        .strength--1 { background-color: #bbf7d0; color: #111827; }
+        .strength--2 { background-color: #86efac; color: #111827; }
+        .strength--3 { background-color: #4ade80; color: white; }
+        .strength--4 { background-color: #22c55e; color: white; }
+        .strength--5 { background-color: #16a34a; color: white; }
+        
+        .gradient-bar {
+            background: linear-gradient(to right, rgb(220, 38, 38), rgb(156, 163, 175), rgb(34, 197, 94));
+            height: 0.75rem;
+            border-radius: 9999px;
+            overflow: hidden;
+        }
+        
+        .gradient-fill {
+            height: 100%;
+            transition: width 0.3s ease;
+        }
+        
+        .meter-label {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            text-align: center;
+        }
+        
+        .table-wrapper {
+            overflow-x: auto;
+            max-height: 24rem;
+            overflow-y: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 0.75rem 1rem;
+            text-align: center;
+            border-bottom: 1px solid #334155;
+        }
+        
+        th {
+            background-color: #0f172a;
+            color: #cbd5e1;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+        }
+        
+        td {
+            color: #f1f5f9;
+        }
+        
+        tr:hover {
+            background-color: rgba(15, 23, 42, 0.5);
+        }
+        
+        .pair-name {
+            text-align: left;
+            font-weight: 500;
+        }
+        
+        .info-section {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+        }
+        
+        .info-section h3 {
+            font-size: 1.125rem;
+            font-weight: bold;
+            color: white;
+            margin-bottom: 1rem;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .info-box h4 {
+            font-weight: 600;
+            color: white;
+            margin-bottom: 0.5rem;
+        }
+        
+        .info-box {
+            color: #cbd5e1;
+            font-size: 0.875rem;
+        }
+        
+        .info-box ul {
+            list-style: none;
+            space-y: 0.25rem;
+        }
+        
+        .info-box li {
+            margin-bottom: 0.25rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>Forex Strength Analyzer Pro</h1>
+            <p>Real-time currency strength analysis across H4, D1, and W1 timeframes using EMA 5/12 crossovers</p>
+        </div>
+
+        <!-- Control Panel -->
+        <div class="control-panel">
+            <div class="button-group">
+                <button id="fetchBtn" onclick="fetchLiveData()">
+                    <span>🚀</span>
+                    <span id="fetchText">Update Live Data</span>
+                </button>
+                <button id="clearBtn" onclick="clearToZeros()">
+                    <span>⟳</span>
+                    <span>Clear to Zeros</span>
+                </button>
+            </div>
+            <div class="status-info">
+                <div class="status-message" id="statusMessage">Ready to analyze...</div>
+                <div class="last-update" id="lastUpdateTime"></div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-grid">
+            <!-- Currency Strength Meters (Left) -->
+            <div class="card">
+                <h2>Currency Strength Meters</h2>
+                <div class="currency-meters" id="currencyMeters">
+                    <!-- Populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Pair Strength Table (Right) -->
+            <div class="card">
+                <h2>Pair Strength Analysis (-5 to +5 Scale)</h2>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Pair</th>
+                                <th>H4</th>
+                                <th>D1</th>
+                                <th>W1</th>
+                                <th>Combined</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pairsTable">
+                            <!-- Populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Information Section -->
+        <div class="info-section">
+            <h3>How to Interpret the Results</h3>
+            <div class="info-grid">
+                <div class="info-box">
+                    <h4>Scoring Scale</h4>
+                    <ul>
+                        <li><strong style="color: #f87171;">+5 to +4:</strong> Very Strong Uptrend</li>
+                        <li><strong style="color: #4ade80;">+3 to +2:</strong> Moderate Uptrend</li>
+                        <li><strong style="color: #86efac;">+1:</strong> Weak Uptrend</li>
+                        <li><strong style="color: #cbd5e1;">0:</strong> Neutral/Consolidating</li>
+                        <li><strong style="color: #bbf7d0;">-1:</strong> Weak Downtrend</li>
+                        <li><strong style="color: #4ade80;">-2 to -3:</strong> Moderate Downtrend</li>
+                        <li><strong style="color: #16a34a;">-4 to -5:</strong> Very Strong Downtrend</li>
+                    </ul>
+                </div>
+                <div class="info-box">
+                    <h4>Timeframe Weighting</h4>
+                    <p>The Combined score uses weighted averages: H4 (1x), D1 (2x), W1 (3x). This gives higher importance to longer timeframes, reflecting professional trading practice that weekly and daily trends are more significant than 4-hour trends.</p>
+                </div>
+                <div class="info-box">
+                    <h4>Currency Strength</h4>
+                    <p>Each currency's strength is calculated by averaging all 7 pairs where it appears. For base currencies, uptrends = strength. For quote currencies, downtrends = strength (inverse logic).</p>
+                </div>
+                <div class="info-box">
+                    <h4>Trading Strategy</h4>
+                    <p>Pair the strongest currency with the weakest one for optimal trade setup. For example, if USD is +4 and JPY is -3, USD/JPY is a strong buy signal.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const PAIRS = [
+            "EURUSD", "GBPUSD", "AUDUSD", "NZDUSD", "USDCHF", "USDJPY", "USDCAD",
+            "EURCHF", "GBPCHF", "AUDCHF", "NZDCHF", "CADCHF", "EURGBP", "EURCAD",
+            "EURAUD", "EURNZD", "EURJPY", "GBPJPY", "AUDJPY", "CHFJPY", "NZDJPY",
+            "CADJPY", "GBPAUD", "GBPCAD", "GBPNZD", "AUDCAD", "AUDNZD", "NZDCAD"
+        ];
+
+        const CURRENCIES = ["USD", "EUR", "GBP", "JPY", "CHF", "CAD", "AUD", "NZD"];
+
+        const CURRENCY_PAIRS_MAP = {
+            USD: ["EURUSD", "GBPUSD", "AUDUSD", "NZDUSD", "USDCHF", "USDJPY", "USDCAD"],
+            EUR: ["EURUSD", "EURCHF", "EURGBP", "EURCAD", "EURAUD", "EURNZD", "EURJPY"],
+            GBP: ["GBPUSD", "GBPCHF", "GBPJPY", "GBPCAD", "GBPAUD", "GBPNZD", "EURGBP"],
+            JPY: ["USDJPY", "EURJPY", "GBPJPY", "AUDJPY", "CHFJPY", "NZDJPY", "CADJPY"],
+            CHF: ["USDCHF", "EURCHF", "GBPCHF", "AUDCHF", "NZDCHF", "CADCHF", "CHFJPY"],
+            CAD: ["USDCAD", "EURCAD", "GBPCAD", "AUDCAD", "NZDCAD", "CADCHF", "CADJPY"],
+            AUD: ["AUDUSD", "AUDCHF", "AUDJPY", "AUDCAD", "AUDNZD", "GBPAUD", "EURAUD"],
+            NZD: ["NZDUSD", "NZDCHF", "NZDJPY", "NZDCAD", "AUDNZD", "GBPNZD", "EURNZD"]
+        };
+
+        let pairStrengths = {};
+        let currencyStrengths = {};
+
+        function calculateTrendScore(ema5, ema12) {
+            if (ema5 === null || ema5 === undefined || ema12 === null || ema12 === undefined) return 0;
+            if (ema5 === 0 || ema12 === 0) return 0;
+            
+            const diff = ema5 - ema12;
+            const percentDiff = (diff / ema12) * 100;
+            
+            if (percentDiff > 2) return 5;
+            if (percentDiff > 1.5) return 4;
+            if (percentDiff > 0.5) return 3;
+            if (percentDiff > 0.1) return 2;
+            if (percentDiff > -0.1) return 0;
+            if (percentDiff > -0.5) return -2;
+            if (percentDiff > -1.5) return -4;
+            return -5;
+        }
+
+        function calculateCombinedScore(h4, d1, w1) {
+            const weighted = (h4 * 1 + d1 * 2 + w1 * 3) / 6;
+            return Math.round(weighted);
+        }
+
+        function getCurrencyPosition(pair, currency) {
+            const base = pair.slice(0, 3);
+            const quote = pair.slice(3);
+            if (base === currency) return "base";
+            if (quote === currency) return "quote";
+            return null;
+        }
+
+        function calculateCurrencyStrength(currency, pairs) {
+            const currencyPairs = CURRENCY_PAIRS_MAP[currency] || [];
+            let totalStrength = 0;
+            let count = 0;
+
+            currencyPairs.forEach(pair => {
+                const pairData = pairs[pair];
+                if (!pairData) return;
+
+                const position = getCurrencyPosition(pair, currency);
+                let contribution = pairData.combined;
+
+                if (position === "quote") {
+                    contribution = -contribution;
+                }
+
+                totalStrength += contribution;
+                count++;
+            });
+
+            return count > 0 ? Math.round(totalStrength / count) : 0;
+        }
+
+        function getStrengthClass(score) {
+            if (score >= 4) return "strength-5";
+            if (score >= 3) return "strength-4";
+            if (score >= 2) return "strength-3";
+            if (score >= 1) return "strength-2";
+            if (score > -1) return "strength-0";
+            if (score > -2) return "strength--1";
+            if (score > -3) return "strength--2";
+            if (score > -4) return "strength--3";
+            return "strength--5";
+        }
+
+        function getGradientPercentage(score) {
+            return ((score + 5) / 10) * 100;
+        }
+
+        async function fetchFromTradingView(symbols, interval) {
+            try {
+                const url = "https://scanner.tradingview.com/forex/scan";
+                const dataInterval = interval === "h4" ? "|240" : (interval === "w1" ? "|1W" : "");
+                
+                const body = {
+                    "symbols": {
+                        "tickers": symbols.map(s => "FX_IDC:" + s),
+                        "query": { "types": [] }
+                    },
+                    "columns": ["EMA5" + dataInterval, "EMA12" + dataInterval]
+                };
+
+                // Try with no-cors mode first
+                const response = await fetch(url, {
+                    method: "POST",
+                    headers: { 
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(body),
+                    mode: "no-cors"
+                });
+
+                // If that doesn't work, try with standard CORS
+                if (!response.ok || response.type === "opaque") {
+                    const response2 = await fetch(url, {
+                        method: "POST",
+                        headers: { 
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify(body)
+                    });
+                    
+                    if (response2.ok) {
+                        const data = await response2.json();
+                        console.log("Successfully fetched " + interval + ": " + (data.data ? data.data.length : 0) + " items");
+                        return data;
+                    }
+                }
+
+                console.log("Fetch for " + interval + " returned opaque response or failed");
+                return null;
+            } catch (err) {
+                console.error("Fetch error for " + interval + ": " + err.message);
+                return null;
+            }
+        }
+
+        async function fetchLiveData() {
+            const fetchBtn = document.getElementById("fetchBtn");
+            const statusMsg = document.getElementById("statusMessage");
+            
+            fetchBtn.disabled = true;
+            statusMsg.textContent = "Attempting to fetch live data from TradingView...";
+
+            try {
+                const results = {};
+                PAIRS.forEach(p => {
+                    results[p] = { h4: 0, d1: 0, w1: 0 };
+                });
+
+                let successCount = 0;
+                const intervals = ["h4", "d1", "w1"];
+
+                for (let i = 0; i < intervals.length; i++) {
+                    const tf = intervals[i];
+                    statusMsg.textContent = "Fetching " + tf + " timeframe data...";
+                    
+                    const data = await fetchFromTradingView(PAIRS, tf);
+                    
+                    if (data && data.data && Array.isArray(data.data) && data.data.length > 0) {
+                        successCount++;
+                        
+                        for (let j = 0; j < data.data.length; j++) {
+                            const item = data.data[j];
+                            const pairSymbol = item.s ? item.s.split(":")[1] : null;
+                            if (pairSymbol && results[pairSymbol]) {
+                                const ema5 = item.d ? item.d[0] : null;
+                                const ema12 = item.d ? item.d[1] : null;
+                                const score = calculateTrendScore(ema5, ema12);
+                                results[pairSymbol][tf] = score;
+                            }
+                        }
+                    }
+
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+
+                // Process results
+                PAIRS.forEach(pair => {
+                    const h4 = results[pair].h4;
+                    const d1 = results[pair].d1;
+                    const w1 = results[pair].w1;
+                    const combined = calculateCombinedScore(h4, d1, w1);
+
+                    pairStrengths[pair] = {
+                        pair: pair,
+                        h4: h4,
+                        d1: d1,
+                        w1: w1,
+                        combined: combined
+                    };
+                });
+
+                CURRENCIES.forEach(currency => {
+                    const strength = calculateCurrencyStrength(currency, pairStrengths);
+                    currencyStrengths[currency] = {
+                        currency: currency,
+                        strength: strength,
+                        pairCount: CURRENCY_PAIRS_MAP[currency].length
+                    };
+                });
+
+                updateUI();
+                
+                if (successCount === 0) {
+                    statusMsg.textContent = "No live data available - displaying zeros. TradingView API may be blocking requests.";
+                    document.getElementById("lastUpdateTime").textContent = "Status: No data connection";
+                } else {
+                    statusMsg.textContent = "Live data updated successfully! (" + successCount + " timeframes fetched)";
+                    document.getElementById("lastUpdateTime").textContent = "Last updated: " + new Date().toLocaleTimeString();
+                }
+            } catch (err) {
+                console.error("Fatal error: " + err.message);
+                statusMsg.textContent = "Error fetching data - displaying zeros";
+                clearToZeros();
+            } finally {
+                fetchBtn.disabled = false;
+            }
+        }
+
+        function clearToZeros() {
+            pairStrengths = {};
+            PAIRS.forEach(pair => {
+                pairStrengths[pair] = {
+                    pair: pair,
+                    h4: 0,
+                    d1: 0,
+                    w1: 0,
+                    combined: 0
+                };
+            });
+
+            currencyStrengths = {};
+            CURRENCIES.forEach(currency => {
+                currencyStrengths[currency] = {
+                    currency: currency,
+                    strength: 0,
+                    pairCount: CURRENCY_PAIRS_MAP[currency].length
+                };
+            });
+
+            updateUI();
+            document.getElementById("statusMessage").textContent = "All values cleared to zero";
+            document.getElementById("lastUpdateTime").textContent = "";
+        }
+
+        function updateUI() {
+            const metersContainer = document.getElementById("currencyMeters");
+            metersContainer.innerHTML = "";
+
+            for (let i = 0; i < CURRENCIES.length; i++) {
+                const currency = CURRENCIES[i];
+                const data = currencyStrengths[currency];
+                if (!data) continue;
+
+                const percentage = getGradientPercentage(data.strength);
+                const strengthClass = getStrengthClass(data.strength);
+
+                const meterHTML = '<div class="meter">' +
+                    '<div class="meter-header">' +
+                    '<span class="meter-currency">' + currency + '</span>' +
+                    '<span class="strength-badge ' + strengthClass + '">' +
+                    (data.strength > 0 ? "+" : "") + data.strength +
+                    '</span>' +
+                    '</div>' +
+                    '<div class="gradient-bar">' +
+                    '<div class="gradient-fill" style="width: ' + percentage + '%"></div>' +
+                    '</div>' +
+                    '<div class="meter-label">' + data.pairCount + ' pairs</div>' +
+                    '</div>';
+                metersContainer.innerHTML += meterHTML;
+            }
+
+            const tableBody = document.getElementById("pairsTable");
+            tableBody.innerHTML = "";
+
+            for (let i = 0; i < PAIRS.length; i++) {
+                const pair = PAIRS[i];
+                const data = pairStrengths[pair];
+                if (!data) continue;
+
+                const h4Class = getStrengthClass(data.h4);
+                const d1Class = getStrengthClass(data.d1);
+                const w1Class = getStrengthClass(data.w1);
+                const combinedClass = getStrengthClass(data.combined);
+
+                const rowHTML = '<tr>' +
+                    '<td class="pair-name">' + pair.slice(0, 3) + '/' + pair.slice(3) + '</td>' +
+                    '<td><span class="strength-badge ' + h4Class + '">' + (data.h4 > 0 ? "+" : "") + data.h4 + '</span></td>' +
+                    '<td><span class="strength-badge ' + d1Class + '">' + (data.d1 > 0 ? "+" : "") + data.d1 + '</span></td>' +
+                    '<td><span class="strength-badge ' + w1Class + '">' + (data.w1 > 0 ? "+" : "") + data.w1 + '</span></td>' +
+                    '<td><span class="strength-badge ' + combinedClass + '">' + (data.combined > 0 ? "+" : "") + data.combined + '</span></td>' +
+                    '</tr>';
+                tableBody.innerHTML += rowHTML;
+            }
+        }
+
+        window.addEventListener("DOMContentLoaded", function() {
+            clearToZeros();
+        });
+    </script>
+</body>
+</html>
